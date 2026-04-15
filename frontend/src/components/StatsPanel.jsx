@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useRef, useState, useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { exportElementToPdf, exportElementToPng } from "../utils/chartExport";
 
 const chartPalette = [
   "#2563eb",
@@ -27,6 +28,10 @@ const chartPalette = [
 const numberFormatter = new Intl.NumberFormat("id-ID");
 
 function StatsPanel({ stats }) {
+  const chartRef = useRef(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
   const normalizedStats = useMemo(
     () =>
       stats.map((item) => ({
@@ -74,11 +79,57 @@ function StatsPanel({ stats }) {
     (item) => item.kasusBaru > 0 || item.meninggal > 0,
   );
 
+  const handleExport = async (format) => {
+    setIsExporting(true);
+    setExportError("");
+
+    try {
+      if (format === "png") {
+        await exportElementToPng(chartRef.current, "statistik-penyakit.png");
+      } else {
+        await exportElementToPdf(chartRef.current, "statistik-penyakit.pdf");
+      }
+    } catch (error) {
+      setExportError(error.message || "Gagal melakukan export chart.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <section className="panel">
-      <h2 className="panel-title">Statistik Penyakit</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="panel-title mb-0">Statistik Penyakit</h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-[10px] border border-line bg-panel px-3 py-2 text-sm font-semibold text-ink transition hover:bg-panelSoft disabled:cursor-not-allowed disabled:opacity-55"
+            onClick={() => handleExport("png")}
+            disabled={isExporting}
+          >
+            Export PNG
+          </button>
+          <button
+            type="button"
+            className="btn-primary px-3 py-2 text-sm"
+            onClick={() => handleExport("pdf")}
+            disabled={isExporting}
+          >
+            Export PDF
+          </button>
+        </div>
+      </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-5">
+      {exportError && (
+        <p className="mb-3 rounded-[10px] border border-dangerLine bg-dangerSoft px-3 py-2 text-sm text-danger">
+          {exportError}
+        </p>
+      )}
+
+      <div
+        ref={chartRef}
+        className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-5"
+      >
         <article className="rounded-xl border border-line bg-panelSoft p-3 xl:col-span-3">
           <p className="mb-2 text-sm font-semibold text-ink">
             Perbandingan Kasus Baru dan Meninggal

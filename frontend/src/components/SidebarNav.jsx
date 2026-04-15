@@ -7,15 +7,15 @@ function SidebarNav({
   onNavigate,
   onClose,
 }) {
+  const mobileStateClass = sidebarOpen
+    ? "max-md:translate-x-0 max-md:opacity-100"
+    : "max-md:pointer-events-none max-md:-translate-x-full max-md:opacity-0";
+
   return (
     <>
-      <div className="relative">
+      <div className="relative h-full">
         <aside
-          className={`group z-30 h-screen w-[76px] overflow-hidden border-r border-slate-800 bg-sidebar px-3 py-6 text-sideink transition-[width,transform,opacity] duration-300 max-md:fixed max-md:left-0 max-md:top-0 max-md:w-[260px] md:absolute md:inset-y-0 md:left-0 md:hover:w-[280px] ${
-            sidebarOpen
-              ? "opacity-100 max-md:translate-x-0"
-              : "pointer-events-none opacity-0 max-md:-translate-x-full"
-          }`}
+          className={`z-30 h-full w-[280px] overflow-x-hidden overflow-y-auto border-r border-slate-800 bg-sidebar px-3 py-6 text-sideink transition-[transform,opacity] duration-300 max-md:fixed max-md:left-0 max-md:top-0 max-md:h-screen max-md:w-[260px] md:translate-x-0 md:opacity-100 ${mobileStateClass}`}
         >
           <nav
             className="grid gap-2 max-md:grid-cols-3"
@@ -35,7 +35,7 @@ function SidebarNav({
                 <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
                   <NavIcon type={item.key} />
                 </span>
-                <span className="overflow-hidden whitespace-nowrap transition-all duration-300 max-md:max-w-[140px] max-md:opacity-100 md:max-w-0 md:opacity-0 md:group-hover:max-w-[140px] md:group-hover:opacity-100">
+                <span className="overflow-hidden whitespace-nowrap transition-all duration-300 max-w-[140px] opacity-100 max-md:max-w-[140px]">
                   {item.label}
                 </span>
               </button>

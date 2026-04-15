@@ -63,7 +63,7 @@ function App() {
   const currentPage = pages[activePage];
 
   return (
-    <main className="min-h-screen md:grid md:grid-cols-[76px_1fr]">
+    <main className="min-h-screen md:grid md:grid-cols-[280px_1fr]">
       <SidebarNav
         navItems={navItems}
         activePage={activePage}
