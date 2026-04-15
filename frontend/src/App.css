@@ -70,7 +70,7 @@
   }
 
   .sidebar-nav-item {
-    @apply rounded-[10px] border px-3 py-[11px] text-left text-sm font-medium transition max-md:text-center max-md:text-[0.82rem];
+    @apply flex items-center gap-2 rounded-[10px] border px-3 py-[11px] text-left text-sm font-medium transition max-md:justify-center max-md:text-[0.82rem];
   }
 
   .sidebar-nav-item-active {
