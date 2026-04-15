@@ -5,3 +5,19 @@ backend/.env
 frontend/.env
 backend/uploads/
 *.log
+
+# Local environment variants (keep *.env.example tracked)
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Secrets / credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# Local cloud credentials
+.aws/

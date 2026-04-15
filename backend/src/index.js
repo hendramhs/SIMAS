@@ -6,6 +6,7 @@ const path = require("path");
 
 const env = require("./config/env");
 const diseaseRoutes = require("./modules/diseases/diseases.routes");
+const locationRoutes = require("./modules/locations/locations.routes");
 const reportRoutes = require("./modules/reports/reports.routes");
 const statsRoutes = require("./modules/stats/stats.routes");
 const errorHandler = require("./middleware/errorHandler");
@@ -21,6 +22,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/diseases", diseaseRoutes);
+app.use("/api/locations", locationRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/stats", statsRoutes);
 

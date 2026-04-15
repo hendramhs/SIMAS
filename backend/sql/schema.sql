@@ -8,6 +8,20 @@ CREATE TABLE IF NOT EXISTS diseases (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS master_locations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  city_code VARCHAR(20) NOT NULL,
+  city_name VARCHAR(120) NOT NULL,
+  area_code VARCHAR(30) NOT NULL,
+  area_name VARCHAR(120) NOT NULL,
+  latitude DECIMAL(10,7) NOT NULL,
+  longitude DECIMAL(10,7) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_master_locations_area_code (area_code),
+  INDEX idx_master_locations_city_code (city_code),
+  INDEX idx_master_locations_city_area (city_code, area_name)
+);
+
 CREATE TABLE IF NOT EXISTS reports (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   disease_id INT NOT NULL,
@@ -17,6 +31,8 @@ CREATE TABLE IF NOT EXISTS reports (
   deskripsi TEXT NOT NULL,
   kasus_baru INT NOT NULL DEFAULT 0,
   kasus_meninggal INT NOT NULL DEFAULT 0,
+  latitude DECIMAL(10,7) NULL,
+  longitude DECIMAL(10,7) NULL,
   photo_url VARCHAR(255) NULL,
   reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

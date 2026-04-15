@@ -24,8 +24,10 @@ async function createReport(req, res, next) {
         deskripsi,
         kasus_baru,
         kasus_meninggal,
+        latitude,
+        longitude,
         photo_url
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         value.diseaseId,
         value.wilayahCode,
@@ -34,6 +36,8 @@ async function createReport(req, res, next) {
         value.deskripsi,
         value.kasusBaru,
         value.kasusMeninggal,
+        value.latitude,
+        value.longitude,
         uploadResult.publicUrl,
       ],
     );
@@ -89,6 +93,8 @@ async function listReports(req, res, next) {
         r.deskripsi,
         r.kasus_baru,
         r.kasus_meninggal,
+        r.latitude,
+        r.longitude,
         r.photo_url,
         r.reported_at,
         d.id AS disease_id,
@@ -139,6 +145,8 @@ async function getReportById(req, res, next) {
         r.deskripsi,
         r.kasus_baru,
         r.kasus_meninggal,
+        r.latitude,
+        r.longitude,
         r.photo_url,
         r.reported_at,
         d.id AS disease_id,

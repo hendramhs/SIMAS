@@ -7,6 +7,15 @@ function toNullableInt(value) {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function toNullableFloat(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function validateCreateReportPayload(body) {
   const errors = [];
 
@@ -29,9 +38,35 @@ function validateCreateReportPayload(body) {
 
   const kasusBaru = toNullableInt(body.kasus_baru) ?? 0;
   const kasusMeninggal = toNullableInt(body.kasus_meninggal) ?? 0;
+  const latitude = toNullableFloat(body.latitude);
+  const longitude = toNullableFloat(body.longitude);
 
   if (kasusBaru < 0 || kasusMeninggal < 0) {
     errors.push("kasus_baru and kasus_meninggal must be >= 0");
+  }
+
+  if (
+    body.latitude !== undefined &&
+    body.latitude !== "" &&
+    latitude === null
+  ) {
+    errors.push("latitude must be a valid number");
+  }
+
+  if (
+    body.longitude !== undefined &&
+    body.longitude !== "" &&
+    longitude === null
+  ) {
+    errors.push("longitude must be a valid number");
+  }
+
+  if (latitude !== null && (latitude < -90 || latitude > 90)) {
+    errors.push("latitude must be between -90 and 90");
+  }
+
+  if (longitude !== null && (longitude < -180 || longitude > 180)) {
+    errors.push("longitude must be between -180 and 180");
   }
 
   return {
@@ -44,11 +79,14 @@ function validateCreateReportPayload(body) {
       deskripsi: String(body.deskripsi || "").trim(),
       kasusBaru,
       kasusMeninggal,
+      latitude,
+      longitude,
     },
   };
 }
 
 module.exports = {
   toNullableInt,
+  toNullableFloat,
   validateCreateReportPayload,
 };

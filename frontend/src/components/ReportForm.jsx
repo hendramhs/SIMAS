@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
-import { createReport } from "../services/api";
+import { useEffect, useMemo, useState } from "react";
+import { createReport, fetchAreasByCity, fetchCities } from "../services/api";
 
 const initialState = {
   disease_id: "",
   wilayah_code: "",
   wilayah_label: "",
   lokasi_detail: "",
+  latitude: "",
+  longitude: "",
   deskripsi: "",
   kasus_baru: 0,
   kasus_meninggal: 0,
@@ -15,11 +17,101 @@ function ReportForm({ diseases, onSuccess }) {
   const [form, setForm] = useState(initialState);
   const [photo, setPhoto] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [cities, setCities] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [selectedCityCode, setSelectedCityCode] = useState("");
+  const [selectedAreaCode, setSelectedAreaCode] = useState("");
 
   const canSubmit = useMemo(() => {
-    return form.disease_id && form.wilayah_code && form.deskripsi;
+    return (
+      form.disease_id &&
+      form.wilayah_code &&
+      form.lokasi_detail &&
+      form.deskripsi
+    );
   }, [form]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCities = async () => {
+      try {
+        const response = await fetchCities();
+        if (!active) {
+          return;
+        }
+        setCities(response.data || []);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+        setFeedback(`Gagal memuat daftar kota: ${error.message}`);
+      }
+    };
+
+    loadCities();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!selectedCityCode) {
+      setAreas([]);
+      setSelectedAreaCode("");
+      setForm((prev) => ({
+        ...prev,
+        wilayah_code: "",
+        wilayah_label: "",
+        lokasi_detail: "",
+        latitude: "",
+        longitude: "",
+      }));
+      return undefined;
+    }
+
+    const selectedCity = cities.find(
+      (item) => item.city_code === selectedCityCode,
+    );
+    setForm((prev) => ({
+      ...prev,
+      wilayah_code: selectedCityCode,
+      wilayah_label: selectedCity?.city_name || "",
+      lokasi_detail: "",
+      latitude: "",
+      longitude: "",
+    }));
+    setSelectedAreaCode("");
+    setIsLoadingLocations(true);
+
+    const loadAreas = async () => {
+      try {
+        const response = await fetchAreasByCity(selectedCityCode);
+        if (!active) {
+          return;
+        }
+        setAreas(response.data || []);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+        setFeedback(`Gagal memuat detail wilayah: ${error.message}`);
+      } finally {
+        if (active) {
+          setIsLoadingLocations(false);
+        }
+      }
+    };
+
+    loadAreas();
+    return () => {
+      active = false;
+    };
+  }, [selectedCityCode, cities]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -45,6 +137,30 @@ function ReportForm({ diseases, onSuccess }) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCityChange = (event) => {
+    setSelectedCityCode(event.target.value);
+  };
+
+  const handleAreaChange = (event) => {
+    const areaCode = event.target.value;
+    setSelectedAreaCode(areaCode);
+
+    const selectedArea = areas.find((item) => item.area_code === areaCode);
+    setForm((prev) => ({
+      ...prev,
+      lokasi_detail: selectedArea?.area_name || "",
+      latitude:
+        selectedArea?.latitude !== undefined && selectedArea?.latitude !== null
+          ? String(selectedArea.latitude)
+          : "",
+      longitude:
+        selectedArea?.longitude !== undefined &&
+        selectedArea?.longitude !== null
+          ? String(selectedArea.longitude)
+          : "",
+    }));
   };
 
   return (
@@ -73,36 +189,68 @@ function ReportForm({ diseases, onSuccess }) {
         </label>
 
         <label className="field-label">
-          Kode Wilayah
-          <input
+          Kota / Kabupaten
+          <select
             className="input-control"
-            name="wilayah_code"
-            value={form.wilayah_code}
-            onChange={handleChange}
-            placeholder="contoh: 31.74"
+            value={selectedCityCode}
+            onChange={handleCityChange}
             required
-          />
-        </label>
-
-        <label className="field-label">
-          Label Wilayah
-          <input
-            className="input-control"
-            name="wilayah_label"
-            value={form.wilayah_label}
-            onChange={handleChange}
-            placeholder="contoh: Jakarta Selatan"
-          />
+          >
+            <option value="">Pilih kota/kabupaten</option>
+            {cities.map((item) => (
+              <option key={item.city_code} value={item.city_code}>
+                {item.city_name}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="field-label">
           Lokasi Detail
+          <select
+            className="input-control"
+            value={selectedAreaCode}
+            onChange={handleAreaChange}
+            required
+            disabled={!selectedCityCode || isLoadingLocations}
+          >
+            <option value="">
+              {selectedCityCode
+                ? isLoadingLocations
+                  ? "Memuat detail wilayah..."
+                  : "Pilih detail wilayah"
+                : "Pilih kota terlebih dahulu"}
+            </option>
+            {areas.map((item) => (
+              <option key={item.area_code} value={item.area_code}>
+                {item.area_name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <input type="hidden" name="wilayah_code" value={form.wilayah_code} />
+        <input type="hidden" name="wilayah_label" value={form.wilayah_label} />
+
+        <label className="field-label">
+          Latitude (otomatis)
           <input
             className="input-control"
-            name="lokasi_detail"
-            value={form.lokasi_detail}
-            onChange={handleChange}
-            placeholder="Kelurahan / jalan"
+            name="latitude"
+            value={form.latitude}
+            readOnly
+            placeholder="Terisi otomatis dari lokasi"
+          />
+        </label>
+
+        <label className="field-label">
+          Longitude (otomatis)
+          <input
+            className="input-control"
+            name="longitude"
+            value={form.longitude}
+            readOnly
+            placeholder="Terisi otomatis dari lokasi"
           />
         </label>
 

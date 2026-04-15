@@ -1,14 +1,18 @@
 USE healthtrack;
 
-INSERT INTO diseases (name, code)
-VALUES
-  ('Demam Berdarah Dengue', 'DBD'),
-  ('Malaria', 'MAL'),
-  ('Tuberkulosis', 'TBC'),
-  ('COVID-19', 'CVD'),
-  ('Tifoid', 'TFD')
-ON DUPLICATE KEY UPDATE
-  name = VALUES(name);
+CREATE TABLE IF NOT EXISTS master_locations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  city_code VARCHAR(20) NOT NULL,
+  city_name VARCHAR(120) NOT NULL,
+  area_code VARCHAR(30) NOT NULL,
+  area_name VARCHAR(120) NOT NULL,
+  latitude DECIMAL(10,7) NOT NULL,
+  longitude DECIMAL(10,7) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_master_locations_area_code (area_code),
+  INDEX idx_master_locations_city_code (city_code),
+  INDEX idx_master_locations_city_area (city_code, area_name)
+);
 
 INSERT INTO master_locations (
   city_code,

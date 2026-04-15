@@ -18,6 +18,25 @@ export async function fetchDiseases() {
   return parseJson(response);
 }
 
+export async function fetchCities() {
+  const response = await fetch(`${API_BASE_URL}/locations/cities`);
+  return parseJson(response);
+}
+
+export async function fetchAreasByCity(cityCode) {
+  const searchParams = new URLSearchParams();
+  if (cityCode) {
+    searchParams.set("city_code", cityCode);
+  }
+
+  const queryString = searchParams.toString();
+  const response = await fetch(
+    `${API_BASE_URL}/locations/areas${queryString ? `?${queryString}` : ""}`,
+  );
+
+  return parseJson(response);
+}
+
 export async function fetchReports(params = {}) {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
