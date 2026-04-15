@@ -48,12 +48,16 @@ function ReportForm({ diseases, onSuccess }) {
   };
 
   return (
-    <section className="card">
-      <h2>Laporan Penyakit</h2>
-      <form onSubmit={handleSubmit} className="form-grid">
-        <label>
+    <section className="panel">
+      <h2 className="panel-title">Laporan Penyakit</h2>
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 gap-3 md:grid-cols-2"
+      >
+        <label className="field-label">
           Jenis Penyakit
           <select
+            className="input-control"
             name="disease_id"
             value={form.disease_id}
             onChange={handleChange}
@@ -68,9 +72,10 @@ function ReportForm({ diseases, onSuccess }) {
           </select>
         </label>
 
-        <label>
+        <label className="field-label">
           Kode Wilayah
           <input
+            className="input-control"
             name="wilayah_code"
             value={form.wilayah_code}
             onChange={handleChange}
@@ -79,9 +84,10 @@ function ReportForm({ diseases, onSuccess }) {
           />
         </label>
 
-        <label>
+        <label className="field-label">
           Label Wilayah
           <input
+            className="input-control"
             name="wilayah_label"
             value={form.wilayah_label}
             onChange={handleChange}
@@ -89,9 +95,10 @@ function ReportForm({ diseases, onSuccess }) {
           />
         </label>
 
-        <label>
+        <label className="field-label">
           Lokasi Detail
           <input
+            className="input-control"
             name="lokasi_detail"
             value={form.lokasi_detail}
             onChange={handleChange}
@@ -99,9 +106,10 @@ function ReportForm({ diseases, onSuccess }) {
           />
         </label>
 
-        <label>
+        <label className="field-label">
           Kasus Baru
           <input
+            className="input-control"
             type="number"
             min="0"
             name="kasus_baru"
@@ -110,9 +118,10 @@ function ReportForm({ diseases, onSuccess }) {
           />
         </label>
 
-        <label>
+        <label className="field-label">
           Kasus Meninggal
           <input
+            className="input-control"
             type="number"
             min="0"
             name="kasus_meninggal"
@@ -121,9 +130,10 @@ function ReportForm({ diseases, onSuccess }) {
           />
         </label>
 
-        <label className="full-width">
+        <label className="field-label md:col-span-2">
           Deskripsi
           <textarea
+            className="input-control"
             name="deskripsi"
             value={form.deskripsi}
             onChange={handleChange}
@@ -132,20 +142,25 @@ function ReportForm({ diseases, onSuccess }) {
           />
         </label>
 
-        <label className="full-width">
+        <label className="field-label md:col-span-2">
           Foto
           <input
+            className="input-control"
             type="file"
             accept="image/png,image/jpeg,image/webp"
             onChange={(event) => setPhoto(event.target.files?.[0] || null)}
           />
         </label>
 
-        <button disabled={!canSubmit || isSubmitting} type="submit">
+        <button
+          className="btn-primary"
+          disabled={!canSubmit || isSubmitting}
+          type="submit"
+        >
           {isSubmitting ? "Mengirim..." : "Kirim Laporan"}
         </button>
       </form>
-      {feedback && <p className="feedback">{feedback}</p>}
+      {feedback && <p className="status-success">{feedback}</p>}
     </section>
   );
 }
