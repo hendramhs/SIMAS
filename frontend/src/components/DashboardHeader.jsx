@@ -29,7 +29,7 @@ function DashboardHeader({
 
         <div>
           <p className="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-muted">
-            SIMAS Dashboard
+            SIMAS 
           </p>
           <p className="m-0 text-sm text-muted">
             Sistem Informasi Masyarakat Sehat
