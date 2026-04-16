@@ -1,4 +1,4 @@
-# HealthTrack
+# SIMAS (sistem monitoring masyarakat sehat)
 
 Aplikasi pelaporan, monitoring, dan statistik penyakit.
 
