@@ -20,7 +20,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
 
             echo "=== UPDATE FRONTEND ==="
-            cd /var/www/nama-project
+            cd /var/www/html/index.html
             git pull origin main
 
             echo "=== RESTART NGINX ==="
