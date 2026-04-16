@@ -1,36 +1,76 @@
-name: Deploy Frontend Only
+name: CI/CD Frontend SIMAS
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  deploy:
+  deploy-frontend:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # =========================
+      # 1. CLONE REPOSITORY
+      # =========================
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # =========================
+      # 2. SETUP NODE
+      # =========================
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # =========================
+      # 3. INSTALL & BUILD FRONTEND
+      # =========================
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
 
       - name: Build frontend
-        working-directory: frontend
         run: |
-          npm install
+          cd frontend
           npm run build
 
-      - name: Upload ke EC2
+      # =========================
+      # 4. HAPUS FILE LAMA DI EC2 (PENTING BANGET)
+      # =========================
+      - name: Clear old frontend in EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}         # 🔐 IP PUBLIC EC2
+          username: ubuntu
+          key: ${{ secrets.GIT_PRIVATE_KEY }}   # 🔐 PRIVATE KEY (.pem)
+          script: |
+            echo "=== DELETE OLD FILE ==="
+            sudo rm -rf /var/www/html/*
+
+      # =========================
+      # 5. UPLOAD HASIL BUILD KE EC2
+      # =========================
+      - name: Upload frontend ke EC2
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.EC2_HOST }}         # 🔐 IP PUBLIC EC2
           username: ubuntu
-          key: ${{ secrets.GIT_PRIVATE_KEY }}
+          key: ${{ secrets.GIT_PRIVATE_KEY }}   # 🔐 PRIVATE KEY (.pem)
           source: "frontend/dist/*"
           target: "/var/www/html/"
 
+      # =========================
+      # 6. RESTART NGINX
+      # =========================
       - name: Restart Nginx
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.EC2_HOST }}         # 🔐 IP PUBLIC EC2
           username: ubuntu
-          key: ${{ secrets.GIT_PRIVATE_KEY }}
+          key: ${{ secrets.GIT_PRIVATE_KEY }}   # 🔐 PRIVATE KEY (.pem)
           script: |
+            echo "=== RESTART NGINX ==="
             sudo systemctl restart nginx
