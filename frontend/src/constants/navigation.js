@@ -16,7 +16,7 @@ export const pages = {
 
 export const navItems = [
   { key: "report", label: "Laporan" },
-  { key: "monitoring", label: "bab" },
+  { key: "monitoring", label: "babi" },
   { key: "stats", label: "Statistik" },
 ];
 

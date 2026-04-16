@@ -25,52 +25,68 @@ jobs:
           node-version: "20"
 
       # =========================
-      # 3. INSTALL & BUILD FRONTEND
+      # 3. INSTALL DEPENDENCIES
       # =========================
       - name: Install dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
+        working-directory: frontend
+        run: npm install
 
       # =========================
-      # 4. HAPUS FILE LAMA DI EC2 (PENTING BANGET)
+      # 4. BUILD FRONTEND
+      # =========================
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # =========================
+      # 5. HAPUS FILE LAMA DI EC2
       # =========================
       - name: Clear old frontend in EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}         # 🔐 IP PUBLIC EC2
+          host: ${{ secrets.EC2_HOST }}           # 🔐 IP EC2
           username: ubuntu
-          key: ${{ secrets.GIT_PRIVATE_KEY }}   # 🔐 PRIVATE KEY (.pem)
+          key: ${{ secrets.GIT_PRIVATE_KEY }}     # 🔐 PRIVATE KEY (.pem)
           script: |
-            echo "=== DELETE OLD FILE ==="
+            echo "=== CLEAN DIRECTORY ==="
             sudo rm -rf /var/www/html/*
+            sudo mkdir -p /var/www/html
 
       # =========================
-      # 5. UPLOAD HASIL BUILD KE EC2
+      # 6. UPLOAD HASIL BUILD (FIX UTAMA)
       # =========================
       - name: Upload frontend ke EC2
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}         # 🔐 IP PUBLIC EC2
+          host: ${{ secrets.EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.GIT_PRIVATE_KEY }}   # 🔐 PRIVATE KEY (.pem)
-          source: "frontend/dist/*"
+          key: ${{ secrets.GIT_PRIVATE_KEY }}
+          source: "frontend/dist/*"              # ✅ PENTING: pakai *
           target: "/var/www/html/"
+          strip_components: 2                   # ✅ PENTING: buang folder frontend/dist
 
       # =========================
-      # 6. RESTART NGINX
+      # 7. FIX PERMISSION (BIAR NGINX BISA AKSES)
+      # =========================
+      - name: Set permission
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.GIT_PRIVATE_KEY }}
+          script: |
+            sudo chown -R www-data:www-data /var/www/html
+            sudo chmod -R 755 /var/www/html
+
+      # =========================
+      # 8. RESTART NGINX
       # =========================
       - name: Restart Nginx
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}         # 🔐 IP PUBLIC EC2
+          host: ${{ secrets.EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.GIT_PRIVATE_KEY }}   # 🔐 PRIVATE KEY (.pem)
+          key: ${{ secrets.GIT_PRIVATE_KEY }}
           script: |
             echo "=== RESTART NGINX ==="
             sudo systemctl restart nginx
