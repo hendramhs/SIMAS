@@ -1,4 +1,4 @@
-name: CI/CD Frontend SIMAS
+name: CI/CD Frontend SIMAS (Stable)
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       # =========================
       # 2. SETUP NODE
       # =========================
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -34,9 +34,10 @@ jobs:
           npm run build
 
       # =========================
-      # 4. FIX PERMISSION (IMPORTANT)
+      # 4. FIX PERMISSION DI EC2
+      # (WAJIB biar scp gak error)
       # =========================
-      - name: Fix permission di EC2
+      - name: Fix permission EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -44,24 +45,25 @@ jobs:
           key: ${{ secrets.GIT_PRIVATE_KEY }}
           script: |
             echo "=== FIX PERMISSION ==="
+            sudo mkdir -p /var/www/html
             sudo chown -R ubuntu:ubuntu /var/www/html
             sudo chmod -R 755 /var/www/html
 
       # =========================
-      # 5. CLEAR FILE LAMA
+      # 5. HAPUS FILE LAMA
       # =========================
-      - name: Clear old frontend
+      - name: Clean old files
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.GIT_PRIVATE_KEY }}
           script: |
-            echo "=== DELETE OLD FILE ==="
+            echo "=== CLEAN OLD FILE ==="
             rm -rf /var/www/html/*
 
       # =========================
-      # 6. UPLOAD HASIL BUILD
+      # 6. UPLOAD FILE (FIX STRUCTURE)
       # =========================
       - name: Upload frontend
         uses: appleboy/scp-action@master
@@ -71,6 +73,7 @@ jobs:
           key: ${{ secrets.GIT_PRIVATE_KEY }}
           source: "frontend/dist/*"
           target: "/var/www/html/"
+          strip_components: 2   # 🔥 PENTING: buang folder frontend/dist
 
       # =========================
       # 7. RESTART NGINX
