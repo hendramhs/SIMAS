@@ -291,7 +291,7 @@ function ReportForm({ diseases, onSuccess }) {
         </label>
 
         <label className="field-label md:col-span-2">
-          Foto
+          Dokumen
           <input
             className="input-control"
             type="file"
