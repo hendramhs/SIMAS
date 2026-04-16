@@ -3,6 +3,16 @@ const path = require("path");
 const crypto = require("crypto");
 const env = require("./env");
 
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
 async function ensureDirExists(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
 }
@@ -27,6 +37,25 @@ async function saveToLocal(file) {
   };
 }
 
+async function saveToS3(file) {
+  const filename = createFilename(file.originalname);
+  const key = `reports/${filename}`;
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    })
+  );
+
+  return {
+    key,
+    publicUrl: `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${key}`,
+  };
+}
+
 async function saveReportPhoto(file) {
   if (!file) {
     return { key: null, publicUrl: null };
@@ -36,9 +65,11 @@ async function saveReportPhoto(file) {
     return saveToLocal(file);
   }
 
-  throw new Error(
-    "S3 storage is not enabled yet. Set STORAGE_DRIVER=local for MVP.",
-  );
+  if (env.storageDriver === "s3") {
+    return saveToS3(file);
+  }
+
+  throw new Error("Invalid STORAGE_DRIVER");
 }
 
 module.exports = {
