@@ -11,7 +11,7 @@ jobs:
 
     steps:
       # =========================
-      # 1. CLONE REPOSITORY
+      # 1. CLONE REPO
       # =========================
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,69 +19,63 @@ jobs:
       # =========================
       # 2. SETUP NODE
       # =========================
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       # =========================
-      # 3. INSTALL DEPENDENCIES
+      # 3. BUILD FRONTEND
       # =========================
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm install
+      - name: Install & Build
+        run: |
+          cd frontend
+          npm install
+          npm run build
 
       # =========================
-      # 4. BUILD FRONTEND
+      # 4. FIX PERMISSION (IMPORTANT)
       # =========================
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
-      # =========================
-      # 5. HAPUS FILE LAMA DI EC2
-      # =========================
-      - name: Clear old frontend in EC2
+      - name: Fix permission di EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}           # 🔐 IP EC2
+          host: ${{ secrets.EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.GIT_PRIVATE_KEY }}     # 🔐 PRIVATE KEY (.pem)
+          key: ${{ secrets.GIT_PRIVATE_KEY }}
           script: |
-            echo "=== CLEAN DIRECTORY ==="
-            sudo rm -rf /var/www/html/*
-            sudo mkdir -p /var/www/html
+            echo "=== FIX PERMISSION ==="
+            sudo chown -R ubuntu:ubuntu /var/www/html
+            sudo chmod -R 755 /var/www/html
 
       # =========================
-      # 6. UPLOAD HASIL BUILD (FIX UTAMA)
+      # 5. CLEAR FILE LAMA
       # =========================
-      - name: Upload frontend ke EC2
+      - name: Clear old frontend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.GIT_PRIVATE_KEY }}
+          script: |
+            echo "=== DELETE OLD FILE ==="
+            rm -rf /var/www/html/*
+
+      # =========================
+      # 6. UPLOAD HASIL BUILD
+      # =========================
+      - name: Upload frontend
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.GIT_PRIVATE_KEY }}
-          source: "frontend/dist/*"              # ✅ PENTING: pakai *
+          source: "frontend/dist/*"
           target: "/var/www/html/"
-          strip_components: 2                   # ✅ PENTING: buang folder frontend/dist
 
       # =========================
-      # 7. FIX PERMISSION (BIAR NGINX BISA AKSES)
+      # 7. RESTART NGINX
       # =========================
-      - name: Set permission
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.GIT_PRIVATE_KEY }}
-          script: |
-            sudo chown -R www-data:www-data /var/www/html
-            sudo chmod -R 755 /var/www/html
-
-      # =========================
-      # 8. RESTART NGINX
-      # =========================
-      - name: Restart Nginx
+      - name: Restart nginx
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
