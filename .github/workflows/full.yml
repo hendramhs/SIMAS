@@ -1,162 +1,29 @@
-name: Fullstack CI/CD
+name: CI/CD Frontend Only
 
 on:
-  pull_request:
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - ".github/workflows/fullstack-ci-cd.yml" # 🔧 diperbaiki nama file
   push:
-    branches: ["main"]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - ".github/workflows/fullstack-ci-cd.yml" # 🔧 diperbaiki
-  workflow_dispatch:
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-backend
+    branches:
+      - main
 
 jobs:
-  backend-ci:
-    name: Backend CI
+  deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
+          ssh-private-key: ${{ secrets.GIT_PRIVATE_KEY }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Syntax check
+      - name: Deploy Frontend ke EC2
         run: |
-          node --check src/index.js
-          node --check src/utils/validation.js
-          node --check src/modules/reports/reports.controller.js
-          node --check src/modules/stats/stats.controller.js
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
 
-  frontend-ci:
-    name: Frontend CI
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+            echo "=== UPDATE FRONTEND ==="
+            cd /var/www/nama-project
+            git pull origin main
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+            echo "=== RESTART NGINX ==="
+            sudo systemctl restart nginx
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build frontend
-        run: npm run build
-
-      - name: Upload frontend artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist
-
-  docker:
-    name: Build and Push Backend Docker Image
-    needs: [backend-ci, frontend-ci]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # =========================
-      # ➕ DEPLOY BACKEND KE EC2
-      # =========================
-      - name: Deploy Backend ke EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-            docker stop simas-backend || true
-            docker rm simas-backend || true
-
-            docker run -d -p 5000:5000 \
-              --name simas-backend \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-  # =========================
-  # ➕ DEPLOY FRONTEND KE EC2
-  # =========================
-  deploy-frontend:
-    name: Deploy Frontend
-    needs: frontend-ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist
-
-      - name: Upload ke EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_KEY }}
-          source: "frontend/dist/*"
-          target: "/var/www/html/"
+          EOF
